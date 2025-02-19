@@ -1,0 +1,9 @@
+services:
+  openldap-ltb:
+    image: openldap-ltb
+    container_name: openldap-ltb
+    ports:
+      - '389:389'
+      - '636:636'
+    volumes:
+      - ./openldap-ltb:/openldap/

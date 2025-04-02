@@ -6,4 +6,5 @@ services:
       - '389:389'
       - '636:636'
     volumes:
-      - ./openldap-ltb:/openldap/
+      - ./openldap-ltb/schema:/usr/local/openldap/etc/openldap/slapd.d
+      - ./openldap-ltb/data:/usr/local/openldap/var/openldap-data

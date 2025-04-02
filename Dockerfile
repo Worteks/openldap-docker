@@ -1,14 +1,16 @@
 # Base Image
 FROM debian:stable-slim
-LABEL org.opencontainers.image.authors="Abhishek Pai" \
+LABEL org.opencontainers.image.authors="Worteks" \
       name="openldap-ltb"
 
 # Install required binaries
-RUN apt update && \
-    apt upgrade -y && \
-    apt install -y curl && \
-    apt install -y gpg && \
-    apt install -y wget
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt update && \
+    apt upgrade --no-install-recommends -y && \
+    apt install --no-install-recommends -y curl && \
+    apt install --no-install-recommends -y gpg && \
+    apt install --no-install-recommends -y ca-certificates && \
+    apt install --no-install-recommends -y wget
 
 # Openldap-ltb GPG and Repostiory
 RUN curl https://ltb-project.org/documentation/_static/RPM-GPG-KEY-LTB-project | gpg --dearmor > /usr/share/keyrings/ltb-project-openldap-archive-keyring.gpg
@@ -16,30 +18,11 @@ RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ltb-project-openldap-arc
 RUN apt update
 
 # Installing Openldap-ltb
-RUN apt install -y openldap-ltb && \
-    apt install -y openldap-ltb-contrib-overlays && \
-    apt install -y openldap-ltb-mdb-utils && \
-    apt install -y ldapvi
-
-# working dir
-WORKDIR /tmp
-
-# download tar && extract
-RUN wget https://ltb-project.org/archives/slapd-cli-3.5.tar.gz
-RUN tar xvf slapd-cli-3.5.tar.gz
-
-# working directory
-WORKDIR slapd-cli-3.5
-RUN mkdir -p /usr/local/openldap/etc/openldap
-
-# copy configurations and binaries
-RUN cp slapd-cli /usr/local/openldap/sbin
-RUN cp slapd-cli.conf /usr/local/openldap/etc/openldap/
-RUN cp *-template* /usr/local/openldap/etc/openldap/
-RUN cp lload.conf /usr/local/openldap/etc/openldap/
-RUN cp slapd-cli-prompt /etc/bash_completion.d/
-RUN cp slapd-ltb.service /lib/systemd/system/
-RUN cp lload-ltb.service /lib/systemd/system/
+RUN apt install --no-install-recommends -y openldap-ltb && \
+    apt install --no-install-recommends -y openldap-ltb-contrib-overlays && \
+    apt install --no-install-recommends -y openldap-ltb-mdb-utils && \
+    apt install --no-install-recommends -y openldap-ltb-explockout && \
+    apt install --no-install-recommends -y ldapvi
 
 # permissions
 RUN chmod +x /usr/local/openldap/sbin/slapd-cli
@@ -54,7 +37,7 @@ ENV SLAPD_CONF_DIR=/usr/local/openldap/etc/openldap/slapd.d/
 RUN sed "s/SLAPD_CONF_DIR=\"\"/SLAPD_CONF_DIR=\"\$SLAPD_PATH\/etc\/openldap\/slapd.d\"/g" -i /usr/local/openldap/etc/openldap/slapd-cli.conf
 
 # Set working directory
-WORKDIR /openldap
+WORKDIR /usr/local/openldap
 
 # Clean up
 RUN echo "# Clean up image" && \
@@ -62,6 +45,10 @@ RUN echo "# Clean up image" && \
     apt clean && \
     apt autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+# Mount locations
+VOLUME /usr/local/openldap/etc/openldap/slapd.d
+VOLUME /usr/local/openldap/var/openldap-data
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
